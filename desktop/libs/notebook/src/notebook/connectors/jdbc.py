@@ -18,6 +18,7 @@
 from builtins import object
 import logging
 import sys
+import re
 
 from beeswax import data_export
 from desktop.lib.i18n import force_unicode, smart_str
