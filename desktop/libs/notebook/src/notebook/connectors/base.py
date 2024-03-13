@@ -447,6 +447,11 @@ def get_api(request, snippet):
     LOG.debug("Picking up the connectors from the configs using connector_name: %s" % connector_name)
     interpreter = get_interpreter(connector_type=connector_name, user=request.user)
 
+  if 'database' in snippet:
+    interpreter['database'] = snippet.get('database')
+  else:
+    interpreter['database'] = ''
+
   interface = interpreter['interface']
 
   # reconstruct 'custom' interpreter.

@@ -87,7 +87,7 @@ else:
 
 ENGINES = {}
 CONNECTIONS = {}
-ENGINE_KEY = '%(username)s-%(connector_name)s'
+ENGINE_KEY = '%(username)s-%(connector_name)s-%(database)s'
 URL_PATTERN = '(?P<driver_name>.+?://)(?P<host>[^:/ ]+):(?P<port>[0-9]*).*'
 
 LOG = logging.getLogger()
@@ -127,11 +127,17 @@ class SqlAlchemyApi(Api):
       self.backticks = interpreter['dialect_properties']['sql_identifier_quote']
     else:
       self.backticks = '"' if re.match('^(postgresql://|awsathena|elasticsearch|phoenix|trino)', self.options.get('url', '')) else '`'
+    
+    if interpreter.get('database'):
+      self.database = interpreter['database']
+    else:
+      self.database = re.match('.*:\d+/(\w+)\??.*', self.options.get('url', '')).group(1) if re.match('.*:\d+/(\w+)\??.*', self.options.get('url', '')) else 'default'
 
   def _get_engine_key(self):
     return ENGINE_KEY % {
       'username': self.user.username,
-      'connector_name': self.interpreter['name']
+      'connector_name': self.interpreter['name'],
+      'database': self.database
     }
 
   def _get_engine(self):
@@ -175,7 +181,12 @@ class SqlAlchemyApi(Api):
       url = url.replace(work_group, urllib_quote_plus(work_group))
       catalog_name = urllib_parse_qs(parsed.query)['catalog_name'][0]
       url = url.replace(catalog_name, urllib_quote_plus(catalog_name))
-
+    
+    if self.options['url'].startswith('starrocks://'):
+      url = self.options['url']
+      database = re.match('.*:\d+/(\w+)\??.*', url).group(1)
+      url = url.replace(database, self.database)
+    
     m = re.search(URL_PATTERN, url)
     driver_name = m.group('driver_name')
     if self.options.get('has_impersonation'):

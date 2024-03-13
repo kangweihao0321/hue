@@ -59,11 +59,21 @@ class JdbcApi(Api):
     self.db = None
     self.options = interpreter['options']
 
+    if interpreter.get('database'):
+      self.db_name = interpreter['database']
+    else:
+      self.db_name= re.match('.*:\d+/(\w+)\??.*', self.options.get('url', '')).group(1) if re.match(
+        '.*:\d+/(\w+)\??.*', self.options.get('url', '')) else 'default'    
+
     if self.cache_key in API_CACHE:
       self.db = API_CACHE[self.cache_key]
     elif 'password' in self.options:
       username = self.options.get('user') or user.username
       impersonation_property = self.options.get('impersonation_property')
+
+      # re replace curren database
+      self.options['url'] = self.options['url'] .replace(re.match('.*:\d+/(\w+)\??.*', self.options['url'] ).group(1), self.db_name)
+
       self.db = API_CACHE[self.cache_key] = Jdbc(self.options['driver'], self.options['url'], username, self.options['password'],
         impersonation_property=impersonation_property, impersonation_user=user.username)
 
@@ -176,7 +186,7 @@ class JdbcApi(Api):
 
   @property
   def cache_key(self):
-    return '%s-%s' % (self.interpreter['name'], self.user.username)
+    return '%s-%s-%s' % (self.interpreter['name'], self.user.username, self.db_name)
 
   def _createAssist(self, db):
     return Assist(db)

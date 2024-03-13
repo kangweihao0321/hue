@@ -76,6 +76,9 @@ RUN ./build/env/bin/pip install --no-cache-dir \
   # pybigquery \
   elasticsearch-dbapi \
   pyasn1==0.4.1 \
+  # starrocks support
+  starrocks \
+  py4j \
   # View some parquet files \
   python-snappy==0.5.4 \
   # Needed for Jaeger \
